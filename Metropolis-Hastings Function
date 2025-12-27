@@ -1,3 +1,5 @@
+import numpy as np
+
 def metropolis_hastings(n_samples, sigma):
     samples = np.zeros(n_samples)
     current_x = 0.5
