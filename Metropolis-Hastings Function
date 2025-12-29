@@ -1,26 +1,24 @@
 import numpy as np
 
 def metropolis_hastings(n_samples, sigma):
-    samples = np.zeros(n_samples)
-    current_x = 0.5
-    current_prob = target_pdf(current_x)
-    
-    for i in range(n_samples):
-        # Proposal: Gaussian Random Walk
-        proposal = current_x + np.random.normal(0, sigma)
-        proposal_prob = target_pdf(proposal)
-        
-        # Calculate Acceptance Probability
-        if current_prob == 0:
-            alpha = 1
+    chain = np.zeros(n)
+    chain[0] = 0.5 
+    accepted_count = 0
+
+    for i in range(n - 1):
+        current_x = chain[i]
+        proposal = np.random.normal(current_x, sigma)
+
+        p_current = f(current_x)
+        p_proposed = f(proposal)
+
+        if p_current == 0: ratio = 1.0
+        else: ratio = p_proposed / p_current
+
+        if np.random.rand() < ratio:
+            chain[i + 1] = proposal
+            accepted_count += 1
         else:
-            alpha = min(1, proposal_prob / current_prob)
-        
-        # Accept or Reject
-        if np.random.rand() < alpha:
-            current_x = proposal
-            current_prob = proposal_prob
-            
-        samples[i] = current_x
-        
-    return samples
+            chain[i + 1] = current_x
+
+    return chain, accepted_count / n
