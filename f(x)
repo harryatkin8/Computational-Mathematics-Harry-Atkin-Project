@@ -1,0 +1,3 @@
+def f(x):
+    if x < 0 or x > 1: return 0.0
+    return np.exp(-5 * (x - 0.5)**2) * np.cos(3 * np.pi * x) + 1
