@@ -1,0 +1,31 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+chain_low, acc_low = run_metropolis_data(10000, 0.01)
+chain_high, acc_high = run_metropolis_data(10000, 1.0)
+
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+x_vals = np.linspace(0, 1, 500)
+y_vals = [f(x) for x in x_vals]
+norm = np.trapz(y_vals, x_vals)
+y_norm = [y/norm for y in y_vals]
+
+
+ax1.hist(chain_low, bins=100, density=True, label='M-H Samples')
+ax1.plot(x_vals, y_norm, 'r-', linewidth=2, label='Target Distribution')
+ax1.set_title(f"Small Variance ($\sigma=0.01$)\nAcceptance Rate: {acc_low:.1%}")
+ax1.set_xlabel("Probability Space")
+ax1.set_ylabel("Number of States from Markov Chain")
+ax1.legend(loc='upper right', fontsize=8)
+
+ax2.hist(chain_high, bins=100, density=True, label='M-H Samples')
+ax2.plot(x_vals, y_norm, 'r-', linewidth=2, label='Target Distribution')
+ax2.set_title(f"Large Variance ($\sigma=1.0$)\nAcceptance Rate: {acc_high:.1%}")
+ax2.set_xlabel("Probability Space")
+ax2.legend(loc='upper right', fontsize=8)
+
+plt.tight_layout()
+plt.savefig('qualitative_analysis_graph.png', dpi=300, bbox_inches='tight')
+plt.show()
