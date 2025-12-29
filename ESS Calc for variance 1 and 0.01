@@ -1,0 +1,24 @@
+import numpy as np
+
+n_samples = 100000
+n_trials = 100
+sigmas_to_test = [0.01,1]
+
+for sigma in sigmas_to_test:
+    ess_totals = []
+    acc_totals = []  
+
+    for i in range(n_trials):
+        chain, acc_rate = metropolis_hastings(n_samples, sigma)
+
+        ess = calculate_ess(chain)
+        ess_totals.append(ess)
+        acc_totals.append(acc_rate)
+
+    avg_ess = np.mean(ess_totals)
+    avg_acc = np.mean(acc_totals)
+
+    print("Average ESS: ", avg_ess)
+    print("Average Acceptance Rate: avg_acc",)
+    
+   
