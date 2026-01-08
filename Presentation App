@@ -1,46 +1,61 @@
 import streamlit as st
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.integrate import quad
-import Metropolis_Hastings Function, f(x)
 
-st.set_page_config(page_title="MH Algorithm Demo", layout="centered")
-st.title("Metropolis-Hastings Explorer")
-st.markdown("### Interactive Analysis of Proposal Variance ($\sigma^2$)")
+st.set_page_config(page_title="MH Algorithm Analysis", layout="wide")
 
-st.sidebar.header("Tuning")
-st.sidebar.subheader("Quick Presets")
+st.sidebar.markdown("**Number of Samples:** 10,000")
+st.sidebar.divider()
 
 col1, col2 = st.sidebar.columns(2)
-col3, col4 = st.sidebar.columns(2)
 
-preset = None
-if col1.button("Low (0.01)"): preset = 0.01
-if col2.button("High (1.0)"): preset = 1.0
-if col3.button("Optimal (0.597)"): preset = 0.597
-if col4.button("Theoretical (0.47)"): preset = 0.47
+if col1.button("Optimal (0.597)"):
+    st.session_state.sigma_val = 0.597
+run_extreme = False
+if col2.button("Extreme (50.0)"):
+    run_extreme = True
 
-if preset is not None:
-    sigma = st.sidebar.slider("Proposal Sigma ($\sigma$)", 0.01, 1.0, preset, 0.001)
+sigma_slider = st.sidebar.slider(
+    "Proposal Sigma", 
+    min_value=0.01, 
+    max_value=1.0, 
+    step=0.01,
+    key='sigma_val'
+)
+if run_extreme:
+    sigma = 50.0
 else:
-    sigma = st.sidebar.slider("Proposal Sigma ($\sigma$)", 0.01, 1.0, 0.1, 0.001)
-
+    sigma = sigma_slider
 samples, acc_rate = metropolis_hastings(10000, sigma)
+ess = int(calculate_ess(samples))
 
-fig, ax = plt.subplots(figsize=(10, 6), dpi=100)
+st.title("Metropolis-Hastings: Efficiency Analysis")
 
-ax.hist(samples, bins=60, density=True, color='#1f77b4', label='M-H Samples')
+col_graph, col_metric = st.columns([3, 1])
 
-x_vals = np.linspace(0, 1, 1000)
-y_vals = [f(x) for x in x_vals]
-norm_const, _ = quad(f, 0, 1)
-ax.plot(x_vals, np.array(y_vals)/norm_const, 'r-', linewidth=3, label=r'$e^{-5(x-0.5)^2}\cos(3\pi x) + 1$')
+with col_graph:
+    fig1, ax1 = plt.subplots(figsize=(10, 5))
+    ax1.hist(samples, bins=60, density=True, color='#1f77b4', alpha=0.7, label='M-H Samples')
+    x_range = np.linspace(0, 1, 1000)
+    y_range = [target_dist(val) for val in x_range]
+    norm, _ = quad(target_dist, 0, 1)
+    ax1.plot(x_range, np.array(y_range)/norm, 'r-', linewidth=2, label='Target Distribution')
+    
+    ax1.set_title(f"M-H Algorithm Graph (Sigma: {sigma})")
+    ax1.set_xlabel("State Space")
+    ax1.set_ylabel("Density")
+    ax1.legend()
+    st.pyplot(fig1)
 
-ax.set_title(f"Metropolis-Hastings ($\sigma = {sigma}$)\nAcceptance Rate: {acc_rate*100:.2f}%", fontsize=14)
-ax.set_ylabel("Number of States from Markov Chain", fontsize=12)
-ax.set_xlabel("State Space", fontsize=12)
-ax.set_xlim(0, 1)
-ax.set_ylim(0, 3.2)
-ax.legend(loc='upper left', frameon=True)
-
-st.pyplot(fig)
+with col_metric:
+    st.markdown("### Efficiency Metric")
+    st.metric(label="Effective Sample Size", value=f"{ess:,}")
+    st.markdown(f"**Acceptance Rate:** {acc_rate*100:.1f}%")
+    
+    if sigma == 50.0:
+        st.error("❌ **Extreme Failure:**\nSampler is frozen due to massive steps.")
+    elif abs(sigma - 0.597) < 0.02:
+        st.success("✅ **Optimal:**\nHigh independence.")
+    elif sigma <= 0.05:
+        st.warning("❌ **Small Standard Deviation Failure:**\nStep size too small.")
